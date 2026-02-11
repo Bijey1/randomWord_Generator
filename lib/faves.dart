@@ -7,7 +7,7 @@ class favorites {
     wordVault.add(word);
   }
 
-  static void showWords() {
+  static void printWords() {
     print(wordVault);
   }
 

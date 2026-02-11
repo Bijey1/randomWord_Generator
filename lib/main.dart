@@ -1,9 +1,11 @@
 import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
+import 'package:google_cert/dictionary.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'faves.dart';
+import 'word.dart';
 
 void main() {
   runApp(MyApp());
@@ -108,7 +110,7 @@ class _firstPageState extends State<firstPage> {
 
   Future<String> randomWordFecth() async {
     final url = Uri.parse(
-      "https://random-words-api.kushcreates.com/api?language=en&words=4",
+      "https://random-words-api.kushcreates.com/api?language=en&words=4&category=animals",
     ); //Parse the uri
 
     try {
@@ -131,12 +133,12 @@ class _firstPageState extends State<firstPage> {
 
   void popUp(String dialog) {
     //SnackBar
-    final popup = SnackBar(
+    final popupMes = SnackBar(
       content: Text(dialog),
       duration: Duration(seconds: 1),
     );
 
-    ScaffoldMessenger.of(context).showSnackBar(popup);
+    ScaffoldMessenger.of(context).showSnackBar(popupMes);
   }
 
   Future<void> pressedNext() async {
@@ -231,11 +233,74 @@ class myCard extends StatelessWidget {
 
 class secondPage extends StatelessWidget {
   final int faveCount;
-  const secondPage({super.key, required this.faveCount});
+  final List<String> vaultWords;
+  const secondPage({
+    super.key,
+    required this.faveCount,
+    required this.vaultWords,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Center(child: Text("Hello page 2"));
+    return faveCount == 0
+        ? Text("No Favorites")
+        : Padding(
+            padding: const EdgeInsets.only(top: 15, left: 10, right: 10),
+            child: GridView.builder(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                mainAxisSpacing: 15,
+                crossAxisSpacing: 15,
+                crossAxisCount: 2, //How many items in a row
+              ),
+              itemCount:
+                  faveCount, //How many items you want to show in the grid
+              itemBuilder:
+                  (
+                    context,
+                    index,
+                  ) // Context for pointing where this widget is in the widgetTree
+                  {
+                    return faveCard(
+                      faveName: "yes", // Dictionary.pageContent[index]["word"],
+                    );
+                  },
+            ),
+          );
+  }
+}
+
+class faveCard extends StatelessWidget {
+  final String faveName;
+  const faveCard({super.key, required this.faveName});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: Colors.red,
+      child: Padding(
+        padding: const EdgeInsets.only(
+          top: 10.0,
+          left: 15,
+          right: 15,
+          bottom: 10,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(height: 10),
+
+            Text(
+              faveName,
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -247,16 +312,51 @@ class stfWrapper extends StatefulWidget {
 }
 
 class _stfWrapperState extends State<stfWrapper> {
-  int vaultCount = 0;
+  int vaultCount = favorites.countWords();
+  List<String> wordStored = favorites.wordVault;
+
+  Map<String, String> dictionary = {};
+
+  Future<void> fetchWordMeaning() async {
+    for (int i = 0; i < wordStored.length; i++) {
+      List<String> tempW = wordStored;
+      print("Stored are: $tempW");
+      print("Stored i $i is: ${tempW[i]}");
+      final uri = Uri.parse(
+        "https://api.dictionaryapi.dev/api/v2/entries/en/${tempW[i]}",
+      );
+
+      try {
+        final response = await http.get(uri);
+
+        if (response.statusCode == 200) {
+          print("HERE");
+          final data = jsonDecode(response.body);
+          print("HERE1");
+          Word word = Word.getFromJson(data[0]);
+          print("HERE2");
+          word.transferToDictionary();
+          print("HERE3");
+          Dictionary.seeDictContent();
+        }
+      } catch (e) {
+        print("Error in finding the desciption of words");
+      }
+    }
+  }
+
   @override
   void initState() {
     super.initState();
-    vaultCount = favorites.countWords();
-    favorites.showWords();
+    Dictionary.seeDictContent;
+    favorites.printWords();
+    if (vaultCount != 0) fetchWordMeaning();
+
+    print("Words in valut: $vaultCount");
   }
 
   @override
   Widget build(BuildContext context) {
-    return secondPage(faveCount: vaultCount);
+    return secondPage(faveCount: vaultCount, vaultWords: wordStored);
   }
 }
