@@ -21,7 +21,21 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
+        textTheme: TextTheme(
+          titleMedium: TextStyle(color: Colors.white, fontSize: 17),
+          titleSmall: TextStyle(
+            color: Colors.white,
+            fontSize: 17,
+            fontStyle: FontStyle.italic,
+          ),
+          bodyMedium: TextStyle(
+            color: Colors.white,
+            fontSize: 15,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
       ),
+
       home: mainScaf(),
     );
   }
@@ -152,7 +166,35 @@ class _firstPageState extends State<firstPage> {
     wordTrack = cardNam;
   }
 
-  void pressedFavorite() {
+  List<String> wordStored = favorites.wordVault;
+
+  Future<void> fetchWordMeaning() async {
+    String tempW = cardNam;
+    print("Finding the Meanign of $cardNam");
+
+    final uri = Uri.parse(
+      "https://api.dictionaryapi.dev/api/v2/entries/en/${tempW}",
+    );
+
+    try {
+      final response = await http.get(uri);
+
+      if (response.statusCode == 200) {
+        print("HERE");
+        final data = jsonDecode(response.body);
+        print("HERE1");
+        Word word = Word.getFromJson(data[0]);
+        print("HERE2");
+        word.transferToDictionary();
+        print("HERE3");
+        Dictionary.seeDictContent();
+      }
+    } catch (e) {
+      print("Error in finding the desciption of words");
+    }
+  }
+
+  void pressedFavorite() async {
     pressed = !pressed;
     if (pressed) {
       setState(() {
@@ -160,12 +202,15 @@ class _firstPageState extends State<firstPage> {
         //Change the Icon to a filled heart Icon
       });
       favorites.storeWord(cardNam);
+
+      await fetchWordMeaning(); // Get the meaning of the faved word
       popUp("Saved to Favorite");
     } else {
       setState(() {
         //Change the Icon to a hollow heart Icon
         faved = false;
       });
+      Dictionary.deletePage(); //Remove the last word that faved
       favorites.removeWord();
       popUp("Removed to Favorite");
     }
@@ -233,11 +278,11 @@ class myCard extends StatelessWidget {
 
 class secondPage extends StatelessWidget {
   final int faveCount;
-  final List<String> vaultWords;
+  //final List<String> vaultWords;
   const secondPage({
     super.key,
     required this.faveCount,
-    required this.vaultWords,
+    //required this.vaultWords,
   });
 
   @override
@@ -261,7 +306,17 @@ class secondPage extends StatelessWidget {
                   ) // Context for pointing where this widget is in the widgetTree
                   {
                     return faveCard(
-                      faveName: "yes", // Dictionary.pageContent[index]["word"],
+                      faveName:
+                          Dictionary.pageContent[index][0]["word"] ?? "Error",
+                      pho:
+                          Dictionary.pageContent[index][0]["phonetic"] ??
+                          "Error",
+                      partOf:
+                          Dictionary.pageContent[index][0]["partOfSpeech"] ??
+                          "Error",
+                      meaning:
+                          Dictionary.pageContent[index][0]["meaning"] ??
+                          "Error",
                     );
                   },
             ),
@@ -271,33 +326,63 @@ class secondPage extends StatelessWidget {
 
 class faveCard extends StatelessWidget {
   final String faveName;
-  const faveCard({super.key, required this.faveName});
+  final String pho;
+  final String partOf;
+  final String meaning;
+
+  const faveCard({
+    super.key,
+    required this.faveName,
+    required this.pho,
+    required this.partOf,
+    required this.meaning,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Card(
+      elevation: 5,
       color: Colors.red,
-      child: Padding(
-        padding: const EdgeInsets.only(
-          top: 10.0,
-          left: 15,
-          right: 15,
-          bottom: 10,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(height: 10),
+      child: InkWell(
+        onTap: () => print("Tapped"),
+        child: Padding(
+          padding: const EdgeInsets.only(
+            top: 5.0,
+            left: 15,
+            right: 15,
+            bottom: 10,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(height: 10),
 
-            Text(
-              faveName,
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
+              Text(
+                faveName,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 25,
+                ),
               ),
-            ),
-          ],
+
+              Row(
+                children: [
+                  Text(pho, style: Theme.of(context).textTheme.titleMedium),
+                  Text(
+                    " - $partOf",
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                ],
+              ),
+              SizedBox(height: 7),
+              Text(
+                meaning,
+                style: Theme.of(context).textTheme.bodyMedium,
+                maxLines: 3,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -313,50 +398,20 @@ class stfWrapper extends StatefulWidget {
 
 class _stfWrapperState extends State<stfWrapper> {
   int vaultCount = favorites.countWords();
-  List<String> wordStored = favorites.wordVault;
 
   Map<String, String> dictionary = {};
-
-  Future<void> fetchWordMeaning() async {
-    for (int i = 0; i < wordStored.length; i++) {
-      List<String> tempW = wordStored;
-      print("Stored are: $tempW");
-      print("Stored i $i is: ${tempW[i]}");
-      final uri = Uri.parse(
-        "https://api.dictionaryapi.dev/api/v2/entries/en/${tempW[i]}",
-      );
-
-      try {
-        final response = await http.get(uri);
-
-        if (response.statusCode == 200) {
-          print("HERE");
-          final data = jsonDecode(response.body);
-          print("HERE1");
-          Word word = Word.getFromJson(data[0]);
-          print("HERE2");
-          word.transferToDictionary();
-          print("HERE3");
-          Dictionary.seeDictContent();
-        }
-      } catch (e) {
-        print("Error in finding the desciption of words");
-      }
-    }
-  }
 
   @override
   void initState() {
     super.initState();
     Dictionary.seeDictContent;
     favorites.printWords();
-    if (vaultCount != 0) fetchWordMeaning();
 
     print("Words in valut: $vaultCount");
   }
 
   @override
   Widget build(BuildContext context) {
-    return secondPage(faveCount: vaultCount, vaultWords: wordStored);
+    return secondPage(faveCount: vaultCount /*vaultWords: wordStored*/);
   }
 }

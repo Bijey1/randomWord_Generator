@@ -27,7 +27,7 @@ class Word {
         mean = json["meanings"][0]["definitions"][0]["definition"];
       }
 
-      part = json["meanings"][1]["partOfSpeech"];
+      part = json["meanings"][0]["partOfSpeech"];
     }
 
     return Word._internal(w, pho, mean, part);

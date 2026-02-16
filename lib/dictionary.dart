@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class Dictionary {
-  static List<Map<String, String>> pageContent = [];
+  static List<List<Map<String, String>>> pageContent = [];
 
   static void page(
     String word,
@@ -17,10 +17,14 @@ class Dictionary {
         "partOfSpeech": partOfSpeech,
       },
     ];
-    pageContent.addAll(tempPage);
+    pageContent.add(tempPage);
   }
 
   static void seeDictContent() {
     print(pageContent);
+  }
+
+  static void deletePage() {
+    pageContent.removeLast();
   }
 }
