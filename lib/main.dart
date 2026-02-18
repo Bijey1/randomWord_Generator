@@ -296,12 +296,14 @@ class myCard extends StatelessWidget {
 class secondPage extends StatelessWidget {
   final int faveCount;
   final VoidCallback refresh;
-  //final List<String> vaultWords;
+
   const secondPage({
     super.key,
     required this.faveCount,
     required this.refresh,
-    //required this.vaultWords,
+
+    //When you call refresh()
+    //setState will happen to the stfWrapper
   });
 
   @override
@@ -336,7 +338,8 @@ class secondPage extends StatelessWidget {
                       meaning:
                           Dictionary.pageContent[index][0]["meaning"] ??
                           "Error",
-                      refresh: refresh,
+                      refresh: refresh, // Another widget that is a
+                      //Messenger for the stfWrapper to setState
                     );
                   },
             ),
@@ -350,6 +353,8 @@ class faveCard extends StatelessWidget {
   final String partOf;
   final String meaning;
   final VoidCallback refresh;
+  //Here is the refresh that is transferred
+  // stfWrapper (Original) -> secondPage -> faveCard (Current)
 
   const faveCard({
     super.key,
@@ -366,7 +371,7 @@ class faveCard extends StatelessWidget {
       elevation: 5,
       color: Colors.red,
       child: InkWell(
-        onTap: () => bigCard(context),
+        onTap: () => bigCard(context), //Passed the context of this widget
         child: Padding(
           padding: const EdgeInsets.only(
             top: 5.0,
@@ -454,6 +459,15 @@ class faveCard extends StatelessWidget {
                       print("HI"),
                       Navigator.pop(context),
                       refresh(),
+
+                      //I use this to use setState even tho im stateless
+                      //By calling the function stfWrapper(stfWidget, which is the parent
+                      //This now causes a chain reaction from here to the stfWrapper
+
+                      // faveCard (current) -> secondPage -> stfWrapper (original) -> use refresh()=> setState
+
+                      //VoidCallback refresh;
+                      //refresh: () => setState(()}),
                     },
                     icon: Icon(Icons.favorite),
                   ),
@@ -486,6 +500,7 @@ class _stfWrapperState extends State<stfWrapper> {
     favorites.printWords();
 
     print("Words in valut: $vaultCount");
+    print("That ");
   }
 
   @override
