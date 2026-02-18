@@ -22,17 +22,34 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
         textTheme: TextTheme(
-          titleMedium: TextStyle(color: Colors.white, fontSize: 17),
+          titleMedium: TextStyle(
+            color: Colors.white,
+            fontSize: 15,
+            overflow: TextOverflow.ellipsis,
+          ),
           titleSmall: TextStyle(
             color: Colors.white,
-            fontSize: 17,
+            fontSize: 15,
             fontStyle: FontStyle.italic,
+            overflow: TextOverflow.ellipsis,
           ),
           bodyMedium: TextStyle(
             color: Colors.white,
             fontSize: 15,
             overflow: TextOverflow.ellipsis,
           ),
+
+          titleLarge: TextStyle(
+            color: Colors.white,
+            fontSize: 25,
+            fontWeight: FontWeight.bold,
+          ),
+          labelLarge: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontStyle: FontStyle.italic,
+          ),
+          bodyLarge: TextStyle(color: Colors.white, fontSize: 20),
         ),
       ),
 
@@ -278,17 +295,19 @@ class myCard extends StatelessWidget {
 
 class secondPage extends StatelessWidget {
   final int faveCount;
+  final VoidCallback refresh;
   //final List<String> vaultWords;
   const secondPage({
     super.key,
     required this.faveCount,
+    required this.refresh,
     //required this.vaultWords,
   });
 
   @override
   Widget build(BuildContext context) {
     return faveCount == 0
-        ? Text("No Favorites")
+        ? Center(child: Text("No Favorites"))
         : Padding(
             padding: const EdgeInsets.only(top: 15, left: 10, right: 10),
             child: GridView.builder(
@@ -317,6 +336,7 @@ class secondPage extends StatelessWidget {
                       meaning:
                           Dictionary.pageContent[index][0]["meaning"] ??
                           "Error",
+                      refresh: refresh,
                     );
                   },
             ),
@@ -329,6 +349,7 @@ class faveCard extends StatelessWidget {
   final String pho;
   final String partOf;
   final String meaning;
+  final VoidCallback refresh;
 
   const faveCard({
     super.key,
@@ -336,6 +357,7 @@ class faveCard extends StatelessWidget {
     required this.pho,
     required this.partOf,
     required this.meaning,
+    required this.refresh,
   });
 
   @override
@@ -344,7 +366,7 @@ class faveCard extends StatelessWidget {
       elevation: 5,
       color: Colors.red,
       child: InkWell(
-        onTap: () => print("Tapped"),
+        onTap: () => bigCard(context),
         child: Padding(
           padding: const EdgeInsets.only(
             top: 5.0,
@@ -367,11 +389,16 @@ class faveCard extends StatelessWidget {
               ),
 
               Row(
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  Text(pho, style: Theme.of(context).textTheme.titleMedium),
-                  Text(
-                    " - $partOf",
-                    style: Theme.of(context).textTheme.titleSmall,
+                  Text(pho, maxLines: 1),
+                  Expanded(
+                    child: Text(
+                      " - $partOf",
+
+                      style: Theme.of(context).textTheme.titleSmall,
+                      maxLines: 1,
+                    ),
                   ),
                 ],
               ),
@@ -385,6 +412,57 @@ class faveCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Future<dynamic> bigCard(BuildContext context) {
+    return showDialog(
+      context: context,
+      builder: (context) {
+        return SimpleDialog(
+          backgroundColor: Colors.red,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(25.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(faveName, style: Theme.of(context).textTheme.titleLarge),
+
+                  Row(
+                    children: [
+                      Text(pho, style: Theme.of(context).textTheme.labelLarge),
+                      Text(
+                        " - $partOf",
+
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 7),
+                  Text(
+                    meaning,
+                    style: Theme.of(context).textTheme.bodyLarge,
+                    maxLines: 3,
+                  ),
+                  SizedBox(height: 30),
+
+                  ElevatedButton.icon(
+                    label: Text("Remove", style: TextStyle(fontSize: 15)),
+                    onPressed: () => {
+                      Dictionary.deleteFrom(faveName),
+                      print("HI"),
+                      Navigator.pop(context),
+                      refresh(),
+                    },
+                    icon: Icon(Icons.favorite),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -412,6 +490,13 @@ class _stfWrapperState extends State<stfWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    return secondPage(faveCount: vaultCount /*vaultWords: wordStored*/);
+    return secondPage(
+      faveCount: vaultCount,
+      refresh: () => setState(() {
+        //Callback to refresh itself
+        vaultCount = favorites.countWords();
+        print("valut Counts is $vaultCount");
+      }),
+    );
   }
 }

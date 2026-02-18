@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'faves.dart';
 
 class Dictionary {
   static List<List<Map<String, String>>> pageContent = [];
@@ -26,5 +27,16 @@ class Dictionary {
 
   static void deletePage() {
     pageContent.removeLast();
+  }
+
+  static void deleteFrom(dynamic word) {
+    for (int i = 0; i < pageContent.length; i++) {
+      if (pageContent[i][0]["word"] == word) {
+        pageContent.remove(pageContent[i]);
+
+        favorites.removeAWord(word);
+        return;
+      }
+    }
   }
 }
